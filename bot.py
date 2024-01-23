@@ -5,6 +5,9 @@ import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler, filters
 
+from pycoingecko import CoinGeckoAPI
+cg = CoinGeckoAPI()
+
 user_data = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -62,11 +65,29 @@ async def update_user_balance(update: Update, user_id):
         reply_markup=get_keyboard(user_id)
     )
 
-def buy_tokens(user_id, token_to_sell, token_to_buy):
-    sell_amount = 5  # or calculate based on your business logic
-    user_data[user_id][token_to_sell] -= sell_amount
-    user_data[user_id][token_to_buy] += sell_amount
+def get_token_price(token_id):
+    try:
+        return cg.get_price(ids=token_id, vs_currencies='usd')[token_id]['usd']
+    except Exception as e:
+        print(f"Error fetching price for {token_id}: {e}")
+        return None
 
+def buy_tokens(user_id, token_to_sell, token_to_buy):
+    token_ids = {'A': 'harmony', 'B': 'ethereum', 'C': 'bitcoin'}
+
+    sell_token_price = get_token_price(token_ids[token_to_sell])
+    buy_token_price = get_token_price(token_ids[token_to_buy])
+
+    if sell_token_price is None or buy_token_price is None:
+        print("Error fetching token prices")
+        return
+
+    sell_amount = int(user_data[user_id][token_to_sell] * 0.05)
+    sell_value_in_usd = sell_amount * sell_token_price
+
+    buy_amount = sell_value_in_usd / buy_token_price
+    user_data[user_id][token_to_sell] -= sell_amount
+    user_data[user_id][token_to_buy] += buy_amount
 
 def sell_tokens(user_id, token_to_sell):
     sell_amount = int(user_data[user_id][token_to_sell] * 0.05)
