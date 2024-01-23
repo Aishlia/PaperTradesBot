@@ -9,20 +9,21 @@ from pycoingecko import CoinGeckoAPI
 cg = CoinGeckoAPI()
 
 user_data = {}
+tokens = ['ONE', 'HOG', 'BNBUSDT']
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
-    user_data[user.id] = {'A': 100, 'B': 0, 'C': 0}
+    user_data[user.id] = {'ONE': 100, 'HOG': 0, 'BNBUSDT': 0}
     await update.message.reply_html(
-        rf"Hi {user.mention_html()}! You have 100 A tokens.",
+        rf"Hi {user.mention_html()}! You have 100 ONE tokens.",
         reply_markup=get_keyboard(user.id)
     )
 
 def get_keyboard(user_id):
     keyboard = []
-    for token in ['A', 'B', 'C']:
+    for token in tokens:
         keyboard.append([InlineKeyboardButton(f"Buy {token} tokens", callback_data=f'buy_{token}')])
-    # for token in ['A', 'B', 'C']:
+    # for token in tokens:
     #     if user_data[user_id][token] > 0:
     #         keyboard.append([InlineKeyboardButton(f"Sell {token} tokens", callback_data=f'sell_{token}')])
 
@@ -49,7 +50,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def choose_sell_token(update: Update, user_id, token_to_buy):
     keyboard = []
-    for token in ['A', 'B', 'C']:
+    for token in tokens:
         if token != token_to_buy and user_data[user_id][token] > 0:
             keyboard.append([InlineKeyboardButton(f"Sell {token} to buy {token_to_buy}", callback_data=f'sell_{token}_to_buy_{token_to_buy}')])
 
@@ -73,7 +74,7 @@ def get_token_price(token_id):
         return None
 
 def buy_tokens(user_id, token_to_sell, token_to_buy):
-    token_ids = {'A': 'harmony', 'B': 'ethereum', 'C': 'bitcoin'}
+    token_ids = {'ONE': 'harmony', 'HOG': 'wrapped-one', 'BNBUSDT': 'tether'}
 
     sell_token_price = get_token_price(token_ids[token_to_sell])
     buy_token_price = get_token_price(token_ids[token_to_buy])
@@ -92,7 +93,7 @@ def buy_tokens(user_id, token_to_sell, token_to_buy):
 def sell_tokens(user_id, token_to_sell):
     sell_amount = int(user_data[user_id][token_to_sell] * 0.05)
     user_data[user_id][token_to_sell] -= sell_amount
-    for token in ['A', 'B', 'C']:
+    for token in tokens:
         if token != token_to_sell:
             user_data[user_id][token] += sell_amount // 2
 
